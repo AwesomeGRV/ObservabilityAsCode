@@ -1,0 +1,23 @@
+name: "High Memory Usage"
+description: "Alert when memory usage exceeds threshold"
+type: "static"
+enabled: true
+
+# Query for memory usage
+nrql: "SELECT average(memoryUsedPercent) FROM SystemSample WHERE entity.name = '{{ app_name }}'"
+
+# Alert conditions
+critical:
+  operator: "above"
+  threshold: 85
+  duration: 300  # 5 minutes
+  
+warning:
+  operator: "above"
+  threshold: 70
+  duration: 600  # 10 minutes
+
+# Additional configuration
+aggregation_window: 60
+aggregation_method: "average"
+close_violations_on_recovery: true

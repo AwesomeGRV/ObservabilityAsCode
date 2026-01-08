@@ -1,0 +1,22 @@
+# Standard Alert Policy Configuration
+policy_name: "{{ app_name }} - Standard Monitoring"
+incident_preference: "PER_POLICY"  # Options: PER_POLICY, PER_CONDITION, PER_TARGET
+
+# Alert conditions to include
+conditions:
+  - cpu_alert
+  - memory_alert
+  - disk_alert
+  - pod_alert
+  - latency_alert
+  - web_response_alert
+
+# Notification settings
+notifications:
+  enabled: true
+  channels:
+    - "devops-email"
+  
+# Advanced settings
+rollup_strategy: "SUM"
+aggregation_window: 60

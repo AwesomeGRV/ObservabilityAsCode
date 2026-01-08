@@ -1,0 +1,215 @@
+# NERDGraph Queries for Observability Management
+
+# Get all applications
+query GetApplications {
+  actor {
+    entitySearch(query: "type = 'APPLICATION'") {
+      results {
+        entities {
+          name
+          guid
+          entityType
+          domain
+          type
+          ... on ApplicationEntity {
+            name
+            accountId
+            reporting
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get alert policies for an account
+query GetAlertPolicies($accountId: Int!) {
+  actor {
+    account(id: $accountId) {
+      alerts {
+        policiesSearch {
+          policies {
+            id
+            name
+            incidentPreference
+            createdAt
+            updatedAt
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get alert conditions for a policy
+query GetAlertConditions($policyId: Int!) {
+  actor {
+    account(id: 123456) {
+      alerts {
+        policy(id: $policyId) {
+          name
+          incidentPreference
+          conditions {
+            id
+            name
+            type
+            enabled
+            nrql {
+              query
+            }
+            critical {
+              operator
+              threshold
+              thresholdDuration
+              thresholdOccurrences
+            }
+            warning {
+              operator
+              threshold
+              thresholdDuration
+              thresholdOccurrences
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get dashboards
+query GetDashboards($accountId: Int!) {
+  actor {
+    account(id: $accountId) {
+      dashboardSearch(searchCriteria: {}) {
+        dashboards {
+          id
+          name
+          description
+          createdAt
+          updatedAt
+          widgets {
+            title
+            visualization {
+              id
+            }
+            rawConfiguration
+          }
+        }
+      }
+    }
+  }
+}
+
+# Create alert policy mutation
+mutation CreateAlertPolicy($accountId: Int!, $policyName: String!, $incidentPreference: IncidentPreference!) {
+  actor {
+    account(id: $accountId) {
+      alerts {
+        policyCreate(policy: {
+          name: $policyName
+          incidentPreference: $incidentPreference
+        }) {
+          id
+          name
+          incidentPreference
+        }
+      }
+    }
+  }
+}
+
+# Create NRQL alert condition mutation
+mutation CreateAlertCondition($policyId: Int!, $condition: AlertConditionInput!) {
+  actor {
+    account(id: 123456) {
+      alerts {
+        nrqlConditionCreate(policyId: $policyId, condition: $condition) {
+          id
+          name
+          enabled
+        }
+      }
+    }
+  }
+}
+
+# Create dashboard mutation
+mutation CreateDashboard($accountId: Int!, $dashboard: DashboardInput!) {
+  actor {
+    account(id: $accountId) {
+      dashboardCreate(dashboard: $dashboard) {
+        id
+        name
+        description
+      }
+    }
+  }
+}
+
+# Get entities by application name
+query GetEntitiesByAppName($appName: String!) {
+  actor {
+    entitySearch(query: "name = '$appName'") {
+      results {
+        entities {
+          name
+          guid
+          entityType
+          domain
+          type
+        }
+      }
+    }
+  }
+}
+
+# Get recent incidents
+query GetRecentIncidents($accountId: Int!, $timeWindow: DateTimeRangeInput!) {
+  actor {
+    account(id: $accountId) {
+      alerts {
+        incidentsSearch(searchCriteria: {
+          timeWindow: $timeWindow
+        }) {
+          incidents {
+            id
+            title
+            state
+            severity
+            createdAt
+            updatedAt
+            policyName
+            conditionName
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get coverage metrics
+query GetCoverageMetrics($accountId: Int!) {
+  actor {
+    account(id: $accountId) {
+      dashboardSearch(searchCriteria: {}) {
+        dashboards {
+          id
+          name
+        }
+      }
+      alerts {
+        policiesSearch {
+          policies {
+            id
+            name
+            conditions {
+              id
+              name
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+}

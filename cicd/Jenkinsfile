@@ -1,0 +1,279 @@
+pipeline {
+    agent any
+    
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['production', 'staging', 'development'],
+            description: 'Target environment for deployment'
+        )
+        string(
+            name: 'APPLICATIONS',
+            description: 'Comma-separated list of applications to deploy',
+            trim: true
+        )
+        string(
+            name: 'COMPONENTS',
+            defaultValue: 'alerts,dashboards,policies',
+            description: 'Components to deploy (alerts,dashboards,policies)',
+            trim: true
+        )
+        booleanParam(
+            name: 'DRY_RUN',
+            defaultValue: false,
+            description: 'Perform dry run without actual deployment'
+        )
+        booleanParam(
+            name: 'FORCE',
+            defaultValue: false,
+            description: 'Force deployment even if validation fails'
+        )
+        string(
+            name: 'API_BASE_URL',
+            description: 'Observability API base URL',
+            trim: true
+        )
+        password(
+            name: 'API_KEY',
+            description: 'Observability API key'
+        )
+    }
+    
+    environment {
+        PYTHONPATH = "${WORKSPACE}"
+        OBSERVABILITY_API_URL = "${params.API_BASE_URL}"
+        OBSERVABILITY_API_KEY = "${params.API_KEY}"
+    }
+    
+    stages {
+        stage('Setup') {
+            steps {
+                script {
+                    echo "Setting up observability deployment pipeline"
+                    echo "Environment: ${params.ENVIRONMENT}"
+                    echo "Applications: ${params.APPLICATIONS}"
+                    echo "Components: ${params.COMPONENTS}"
+                    echo "Dry Run: ${params.DRY_RUN}"
+                    echo "Force: ${params.FORCE}"
+                }
+                
+                // Checkout code
+                checkout scm
+                
+                // Setup Python environment
+                sh '''
+                    python -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Validate Configuration') {
+            steps {
+                script {
+                    echo "Validating observability configurations"
+                    
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/validate_configs.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --api-url ${params.API_BASE_URL}
+                    '''
+                }
+            }
+        }
+        
+        stage('Check Coverage') {
+            steps {
+                script {
+                    echo "Checking observability coverage"
+                    
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/check_coverage.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --api-url ${params.API_BASE_URL}
+                    '''
+                }
+            }
+        }
+        
+        stage('Generate Terraform') {
+            steps {
+                script {
+                    echo "Generating Terraform configurations"
+                    
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/generate_terraform.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --components ${params.COMPONENTS}
+                    '''
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    echo "Running Terraform plan"
+                    
+                    dir('terraform') {
+                        sh '''
+                            terraform init
+                            terraform plan \
+                                -var-file="environments/${params.ENVIRONMENT}.tfvars" \
+                                -out=tfplan
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Approval') {
+            when {
+                not { params.DRY_RUN }
+                anyOf {
+                    expression { params.ENVIRONMENT == 'production' }
+                    expression { params.ENVIRONMENT == 'staging' }
+                }
+            }
+            steps {
+                script {
+                    echo "Waiting for manual approval for ${params.ENVIRONMENT} deployment"
+                    
+                    input message: "Deploy observability configurations to ${params.ENVIRONMENT}?", 
+                          ok: "Approve"
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    if (params.DRY_RUN) {
+                        echo "DRY RUN: Skipping actual deployment"
+                        return
+                    }
+                    
+                    echo "Deploying observability configurations"
+                    
+                    dir('terraform') {
+                        sh '''
+                            terraform apply tfplan
+                        '''
+                    }
+                    
+                    // Update application inventory
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/update_inventory.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --deployment-id ${env.BUILD_NUMBER}
+                    '''
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    echo "Verifying deployment"
+                    
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/verify_deployment.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --api-url ${params.API_BASE_URL}
+                    '''
+                }
+            }
+        }
+        
+        stage('Generate Report') {
+            steps {
+                script {
+                    echo "Generating deployment report"
+                    
+                    sh '''
+                        . venv/bin/activate
+                        python scripts/generate_report.py \
+                            --environment ${params.ENVIRONMENT} \
+                            --applications ${params.APPLICATIONS} \
+                            --build-number ${env.BUILD_NUMBER} \
+                            --deployment-id ${env.BUILD_NUMBER}
+                    '''
+                    
+                    // Archive reports
+                    archiveArtifacts artifacts: 'reports/*.html, reports/*.json', allowEmptyArchive: true
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            script {
+                echo "Observability deployment completed successfully"
+                
+                // Send notification
+                sh '''
+                    . venv/bin/activate
+                    python scripts/notify.py \
+                        --status success \
+                        --environment ${params.ENVIRONMENT} \
+                        --applications ${params.APPLICATIONS} \
+                        --build-number ${env.BUILD_NUMBER}
+                '''
+            }
+        }
+        
+        failure {
+            script {
+                echo "Observability deployment failed"
+                
+                // Send failure notification
+                sh '''
+                    . venv/bin/activate
+                    python scripts/notify.py \
+                        --status failure \
+                        --environment ${params.ENVIRONMENT} \
+                        --applications ${params.APPLICATIONS} \
+                        --build-number ${env.BUILD_NUMBER}
+                '''
+                
+                // Attempt rollback if this was not a dry run
+                if (!params.DRY_RUN && params.FORCE) {
+                    echo "Attempting rollback due to failure"
+                    
+                    dir('terraform') {
+                        sh '''
+                            terraform destroy \
+                                -var-file="environments/${params.ENVIRONMENT}.tfvars" \
+                                -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+        
+        always {
+            // Cleanup
+            script {
+                echo "Cleaning up workspace"
+                
+                sh '''
+                    rm -rf venv
+                    rm -f terraform/tfplan
+                    rm -f terraform/terraform.tfstate
+                '''
+            }
+        }
+    }
+}

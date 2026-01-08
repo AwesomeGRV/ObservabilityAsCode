@@ -1,0 +1,23 @@
+name: "Web Response Issues"
+description: "Alert when web response codes indicate problems"
+type: "static"
+enabled: true
+
+# Query for error rate
+nrql: "SELECT percentage(count(*), WHERE httpResponseCode >= '500') FROM BrowserInteraction WHERE appName = '{{ app_name }}'"
+
+# Alert conditions
+critical:
+  operator: "above"
+  threshold: 5  # 5% error rate
+  duration: 300  # 5 minutes
+  
+warning:
+  operator: "above"
+  threshold: 2  # 2% error rate
+  duration: 600  # 10 minutes
+
+# Additional configuration
+aggregation_window: 300
+aggregation_method: "average"
+close_violations_on_recovery: true

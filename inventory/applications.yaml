@@ -1,0 +1,158 @@
+# Application Inventory Configuration
+# Define all applications that need observability monitoring
+
+applications:
+  - name: "e-commerce-frontend"
+    environment: "production"
+    entity_id: "entity-frontend-001"
+    team: "Frontend Team"
+    description: "E-commerce frontend application"
+    contact: "frontend-team@company.com"
+    criticality: "high"
+    technologies:
+      - "React"
+      - "Node.js"
+      - "CDN"
+    
+  - name: "e-commerce-backend"
+    environment: "production"
+    entity_id: "entity-backend-001"
+    team: "Backend Team"
+    description: "E-commerce backend API"
+    contact: "backend-team@company.com"
+    criticality: "high"
+    technologies:
+      - "Java"
+      - "Spring Boot"
+      - "PostgreSQL"
+    
+  - name: "payment-service"
+    environment: "production"
+    entity_id: "entity-payment-001"
+    team: "Payments Team"
+    description: "Payment processing service"
+    contact: "payments-team@company.com"
+    criticality: "critical"
+    technologies:
+      - "Python"
+      - "FastAPI"
+      - "Redis"
+    
+  - name: "inventory-service"
+    environment: "production"
+    entity_id: "entity-inventory-001"
+    team: "Inventory Team"
+    description: "Inventory management service"
+    contact: "inventory-team@company.com"
+    criticality: "high"
+    technologies:
+      - "Go"
+      - "MongoDB"
+    
+  - name: "user-service"
+    environment: "production"
+    entity_id: "entity-user-001"
+    team: "Auth Team"
+    description: "User authentication and management"
+    contact: "auth-team@company.com"
+    criticality: "critical"
+    technologies:
+      - "Java"
+      - "Spring Security"
+      - "MySQL"
+    
+  - name: "notification-service"
+    environment: "production"
+    entity_id: "entity-notification-001"
+    team: "Platform Team"
+    description: "Notification and messaging service"
+    contact: "platform-team@company.com"
+    criticality: "medium"
+    technologies:
+      - "Node.js"
+      - "RabbitMQ"
+    
+  - name: "analytics-service"
+    environment: "production"
+    entity_id: "entity-analytics-001"
+    team: "Data Team"
+    description: "Analytics and reporting service"
+    contact: "data-team@company.com"
+    criticality: "medium"
+    technologies:
+      - "Python"
+      - "Apache Spark"
+      - "Elasticsearch"
+    
+  - name: "search-service"
+    environment: "production"
+    entity_id: "entity-search-001"
+    team: "Search Team"
+    description: "Product search service"
+    contact: "search-team@company.com"
+    criticality: "high"
+    technologies:
+      - "Java"
+      - "Elasticsearch"
+    
+  - name: "order-service"
+    environment: "production"
+    entity_id: "entity-order-001"
+    team: "Orders Team"
+    description: "Order processing and management"
+    contact: "orders-team@company.com"
+    criticality: "critical"
+    technologies:
+      - "C#"
+      - ".NET Core"
+      - "SQL Server"
+    
+  - name: "shipping-service"
+    environment: "production"
+    entity_id: "entity-shipping-001"
+    team: "Logistics Team"
+    description: "Shipping and logistics service"
+    contact: "logistics-team@company.com"
+    criticality: "medium"
+    technologies:
+      - "Python"
+      - "Django"
+      - "PostgreSQL"
+
+# Staging applications
+staging_applications:
+  - name: "e-commerce-frontend-staging"
+    environment: "staging"
+    entity_id: "entity-frontend-staging-001"
+    team: "Frontend Team"
+    description: "E-commerce frontend staging"
+    contact: "frontend-team@company.com"
+    criticality: "low"
+    technologies:
+      - "React"
+      - "Node.js"
+    
+  - name: "e-commerce-backend-staging"
+    environment: "staging"
+    entity_id: "entity-backend-staging-001"
+    team: "Backend Team"
+    description: "E-commerce backend staging"
+    contact: "backend-team@company.com"
+    criticality: "low"
+    technologies:
+      - "Java"
+      - "Spring Boot"
+      - "PostgreSQL"
+
+# Development applications
+development_applications:
+  - name: "test-app-1"
+    environment: "development"
+    entity_id: "entity-test-001"
+    team: "Dev Team"
+    description: "Test application for development"
+    contact: "dev-team@company.com"
+    criticality: "low"
+    technologies:
+      - "Python"
+      - "Flask"

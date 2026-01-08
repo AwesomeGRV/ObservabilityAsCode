@@ -1,0 +1,23 @@
+name: "High Response Latency"
+description: "Alert when application response time exceeds threshold"
+type: "static"
+enabled: true
+
+# Query for response time
+nrql: "SELECT percentile(duration, 95) FROM Transaction WHERE appName = '{{ app_name }}'"
+
+# Alert conditions
+critical:
+  operator: "above"
+  threshold: 2000  # 2 seconds in milliseconds
+  duration: 300  # 5 minutes
+  
+warning:
+  operator: "above"
+  threshold: 1000  # 1 second in milliseconds
+  duration: 600  # 10 minutes
+
+# Additional configuration
+aggregation_window: 60
+aggregation_method: "average"
+close_violations_on_recovery: true

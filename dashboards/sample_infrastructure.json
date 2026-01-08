@@ -1,0 +1,73 @@
+{
+  "name": "{{ app_name }} - Infrastructure Monitoring",
+  "description": "Comprehensive infrastructure monitoring dashboard for {{ app_name }}",
+  "widgets": [
+    {
+      "title": "CPU Usage Overview",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(cpuPercent) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Memory Usage Overview",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(memoryUsedPercent) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Disk Usage by Volume",
+      "visualization": "facet_bar_chart",
+      "row": 3,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(diskUsedPercent) FROM StorageSample WHERE entity.name = '{{ app_name }}' FACET device TIMESERIES AUTO"
+    },
+    {
+      "title": "Network I/O",
+      "visualization": "line_chart",
+      "row": 3,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(networkReceiveBytesPerSecond), average(networkTransmitBytesPerSecond) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Load Average",
+      "visualization": "line_chart",
+      "row": 5,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(loadAverageOneMinute), average(loadAverageFiveMinute), average(loadAverageFifteenMinute) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Process Count",
+      "visualization": "billboard",
+      "row": 5,
+      "column": 4,
+      "width": 2,
+      "height": 2,
+      "nrql_query": "SELECT average(processCount) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "System Uptime",
+      "visualization": "billboard",
+      "row": 5,
+      "column": 6,
+      "width": 1,
+      "height": 2,
+      "nrql_query": "SELECT average(systemUptime) FROM SystemSample WHERE entity.name = '{{ app_name }}' TIMESERIES AUTO"
+    }
+  ],
+  "metadata": {
+    "visibility": "all",
+    "grid_column_count": 6
+  }
+}

@@ -1,0 +1,23 @@
+name: "Pod Health Issues"
+description: "Alert when pods are unhealthy or restarting frequently"
+type: "static"
+enabled: true
+
+# Query for pod restarts
+nrql: "SELECT count(kubernetes.pod.restartCount) FROM K8sPodSample WHERE appName = '{{ app_name }}'"
+
+# Alert conditions
+critical:
+  operator: "above"
+  threshold: 5
+  duration: 300  # 5 minutes
+  
+warning:
+  operator: "above"
+  threshold: 2
+  duration: 600  # 10 minutes
+
+# Additional configuration
+aggregation_window: 300
+aggregation_method: "sum"
+close_violations_on_recovery: true

@@ -1,0 +1,22 @@
+# New Relic Configuration
+# Update these values with your New Relic account details
+
+account_id: "YOUR_ACCOUNT_ID"
+api_key: "YOUR_API_KEY"  # User API Key
+region: "US"  # US or EU
+
+# Alert policies configuration
+default_policy:
+  name: "Standard Monitoring Policy"
+  per_condition: true
+
+# Notification channels (optional)
+notification_channels:
+  - type: "email"
+    address: "devops@yourcompany.com"
+    name: "DevOps Team"
+
+# Dashboard configuration
+dashboard_defaults:
+  timeframe: "1 hour"
+  refresh_interval: 60

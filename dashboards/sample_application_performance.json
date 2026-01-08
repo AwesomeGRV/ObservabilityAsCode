@@ -1,0 +1,100 @@
+{
+  "name": "{{ app_name }} - Application Performance",
+  "description": "Application performance monitoring dashboard for {{ app_name }}",
+  "widgets": [
+    {
+      "title": "Response Time (95th percentile)",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentile(duration, 95) FROM Transaction WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Throughput (RPM)",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM Transaction WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Error Rate",
+      "visualization": "line_chart",
+      "row": 3,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Apdex Score",
+      "visualization": "line_chart",
+      "row": 3,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT apdex(duration, t: 0.5) FROM Transaction WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Response Time Distribution",
+      "visualization": "histogram",
+      "row": 5,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT histogram(duration, 10, 10) FROM Transaction WHERE appName = '{{ app_name }}' SINCE 1 hour ago"
+    },
+    {
+      "title": "Top Slow Transactions",
+      "visualization": "table",
+      "row": 5,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(duration), count(*), name FROM Transaction WHERE appName = '{{ app_name }}' FACET name LIMIT 10 ORDER BY average(duration) DESC SINCE 1 hour ago"
+    },
+    {
+      "title": "Database Response Time",
+      "visualization": "line_chart",
+      "row": 7,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(duration) FROM DatastoreSample WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "External Service Response Time",
+      "visualization": "line_chart",
+      "row": 7,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(duration) FROM ExternalServiceSample WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Browser Page Load Time",
+      "visualization": "line_chart",
+      "row": 9,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(duration) FROM PageView WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "User Satisfaction",
+      "visualization": "billboard",
+      "row": 9,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentage(count(*), WHERE duration < 1.0) FROM Transaction WHERE appName = '{{ app_name }}' SINCE 1 hour ago"
+    }
+  ],
+  "metadata": {
+    "visibility": "all",
+    "grid_column_count": 6
+  }
+}

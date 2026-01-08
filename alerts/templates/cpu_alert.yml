@@ -1,0 +1,23 @@
+name: "High CPU Usage"
+description: "Alert when CPU usage exceeds threshold"
+type: "static"
+enabled: true
+
+# Query for CPU usage
+nrql: "SELECT average(cpuPercent) FROM SystemSample WHERE entity.name = '{{ app_name }}'"
+
+# Alert conditions
+critical:
+  operator: "above"
+  threshold: 80
+  duration: 300  # 5 minutes
+  
+warning:
+  operator: "above"
+  threshold: 60
+  duration: 600  # 10 minutes
+
+# Additional configuration
+aggregation_window: 60
+aggregation_method: "average"
+close_violations_on_recovery: true

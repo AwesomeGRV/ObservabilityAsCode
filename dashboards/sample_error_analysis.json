@@ -1,0 +1,91 @@
+{
+  "name": "{{ app_name }} - Error Analysis",
+  "description": "Error analysis dashboard for {{ app_name }}",
+  "widgets": [
+    {
+      "title": "Error Rate",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Error Count",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM Transaction WHERE appName = '{{ app_name }}' AND error IS true TIMESERIES AUTO"
+    },
+    {
+      "title": "Error Types",
+      "visualization": "pie_chart",
+      "row": 3,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM TransactionError WHERE appName = '{{ app_name }}' FACET error.class SINCE 1 hour ago"
+    },
+    {
+      "title": "Top Error Messages",
+      "visualization": "table",
+      "row": 3,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*), message FROM TransactionError WHERE appName = '{{ app_name }}' FACET message LIMIT 10 ORDER BY count(*) DESC SINCE 1 hour ago"
+    },
+    {
+      "title": "Error Rate by Transaction",
+      "visualization": "facet_bar_chart",
+      "row": 5,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction WHERE appName = '{{ app_name }}' FACET name TIMESERIES AUTO"
+    },
+    {
+      "title": "Browser Error Rate",
+      "visualization": "line_chart",
+      "row": 5,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT percentage(count(*), WHERE eventType() = 'JavaScriptError') FROM JavaScriptError WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "HTTP Error Codes",
+      "visualization": "table",
+      "row": 7,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM Transaction WHERE appName = '{{ app_name }}' AND httpResponseCode >= '400' FACET httpResponseCode SINCE 1 hour ago"
+    },
+    {
+      "title": "Error Impact on Users",
+      "visualization": "line_chart",
+      "row": 7,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(DISTINCT session) FROM PageView WHERE appName = '{{ app_name }}' AND eventType() = 'JavaScriptError' TIMESERIES AUTO"
+    },
+    {
+      "title": "Recent Error Events",
+      "visualization": "event_feed",
+      "row": 9,
+      "column": 1,
+      "width": 6,
+      "height": 2,
+      "nrql_query": "SELECT * FROM TransactionError WHERE appName = '{{ app_name }}' ORDER BY timestamp DESC LIMIT 20"
+    }
+  ],
+  "metadata": {
+    "visibility": "all",
+    "grid_column_count": 6
+  }
+}

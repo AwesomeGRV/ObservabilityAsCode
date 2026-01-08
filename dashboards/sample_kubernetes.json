@@ -1,0 +1,100 @@
+{
+  "name": "{{ app_name }} - Kubernetes Monitoring",
+  "description": "Kubernetes monitoring dashboard for {{ app_name }}",
+  "widgets": [
+    {
+      "title": "Running Pods",
+      "visualization": "billboard",
+      "row": 1,
+      "column": 1,
+      "width": 2,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM K8sPodSample WHERE appName = '{{ app_name }}' AND phase = 'Running'"
+    },
+    {
+      "title": "Pod Status Distribution",
+      "visualization": "pie_chart",
+      "row": 1,
+      "column": 3,
+      "width": 2,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM K8sPodSample WHERE appName = '{{ app_name }}' FACET phase"
+    },
+    {
+      "title": "Pod Restarts",
+      "visualization": "line_chart",
+      "row": 1,
+      "column": 5,
+      "width": 2,
+      "height": 2,
+      "nrql_query": "SELECT sum(kubernetes.pod.restartCount) FROM K8sPodSample WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "CPU Usage by Pod",
+      "visualization": "facet_line_chart",
+      "row": 3,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(cpuPercent) FROM K8sContainerSample WHERE appName = '{{ app_name }}' FACET podName TIMESERIES AUTO"
+    },
+    {
+      "title": "Memory Usage by Pod",
+      "visualization": "facet_line_chart",
+      "row": 3,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(memoryUsedPercent) FROM K8sContainerSample WHERE appName = '{{ app_name }}' FACET podName TIMESERIES AUTO"
+    },
+    {
+      "title": "Network Traffic",
+      "visualization": "line_chart",
+      "row": 5,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(networkRxBytesPerSecond), average(networkTxBytesPerSecond) FROM K8sContainerSample WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "File System Usage",
+      "visualization": "line_chart",
+      "row": 5,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(fsUsedPercent) FROM K8sContainerSample WHERE appName = '{{ app_name }}' TIMESERIES AUTO"
+    },
+    {
+      "title": "Node Status",
+      "visualization": "table",
+      "row": 7,
+      "column": 1,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT count(*) FROM K8sNodeSample FACET nodeName, status"
+    },
+    {
+      "title": "Cluster Resource Usage",
+      "visualization": "line_chart",
+      "row": 7,
+      "column": 4,
+      "width": 3,
+      "height": 2,
+      "nrql_query": "SELECT average(cpuPercent), average(memoryUsedPercent) FROM K8sClusterSample TIMESERIES AUTO"
+    },
+    {
+      "title": "Deployment Events",
+      "visualization": "event_feed",
+      "row": 9,
+      "column": 1,
+      "width": 6,
+      "height": 2,
+      "nrql_query": "SELECT * FROM K8sEventSample WHERE appName = '{{ app_name }}' ORDER BY timestamp DESC LIMIT 20"
+    }
+  ],
+  "metadata": {
+    "visibility": "all",
+    "grid_column_count": 6
+  }
+}

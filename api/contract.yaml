@@ -1,0 +1,805 @@
+openapi: 3.0.3
+info:
+  title: Observability as Code API
+  description: API for managing New Relic observability configurations
+  version: 1.0.0
+  contact:
+    name: DevOps Team
+    email: devops@yourcompany.com
+
+servers:
+  - url: https://observability-api.yourcompany.com/v1
+    description: Production server
+  - url: https://observability-staging.yourcompany.com/v1
+    description: Staging server
+
+paths:
+  /applications:
+    get:
+      summary: Get all applications
+      description: Retrieve a list of all monitored applications
+      tags:
+        - Applications
+      parameters:
+        - name: environment
+          in: query
+          schema:
+            type: string
+            enum: [production, staging, development]
+          description: Filter by environment
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Number of items per page
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  applications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create new application
+      description: Register a new application for monitoring
+      tags:
+        - Applications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Application already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /applications/{applicationId}:
+    get:
+      summary: Get application details
+      description: Retrieve detailed information about a specific application
+      tags:
+        - Applications
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Application ID
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update application
+      description: Update application configuration
+      tags:
+        - Applications
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationRequest'
+      responses:
+        '200':
+          description: Application updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete application
+      description: Remove application from monitoring
+      tags:
+        - Applications
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Application deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /applications/{applicationId}/alerts:
+    get:
+      summary: Get application alerts
+      description: Retrieve all alert configurations for an application
+      tags:
+        - Alerts
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create alert
+      description: Create a new alert for the application
+      tags:
+        - Alerts
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /applications/{applicationId}/dashboards:
+    get:
+      summary: Get application dashboards
+      description: Retrieve all dashboard configurations for an application
+      tags:
+        - Dashboards
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of dashboards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dashboards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dashboard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create dashboard
+      description: Create a new dashboard for the application
+      tags:
+        - Dashboards
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDashboardRequest'
+      responses:
+        '201':
+          description: Dashboard created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /coverage:
+    get:
+      summary: Get coverage report
+      description: Generate observability coverage report
+      tags:
+        - Coverage
+      parameters:
+        - name: applicationId
+          in: query
+          schema:
+            type: string
+          description: Specific application ID (optional)
+        - name: environment
+          in: query
+          schema:
+            type: string
+            enum: [production, staging, development]
+          description: Filter by environment
+      responses:
+        '200':
+          description: Coverage report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /compliance:
+    get:
+      summary: Get compliance status
+      description: Check compliance with observability standards
+      tags:
+        - Compliance
+      parameters:
+        - name: applicationId
+          in: query
+          schema:
+            type: string
+          description: Specific application ID (optional)
+        - name: standard
+          in: query
+          schema:
+            type: string
+            default: "standard"
+          description: Compliance standard to check against
+      responses:
+        '200':
+          description: Compliance status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /deploy:
+    post:
+      summary: Deploy configurations
+      description: Deploy observability configurations to New Relic
+      tags:
+        - Deployment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployRequest'
+      responses:
+        '200':
+          description: Deployment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeployResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "app-123456"
+        name:
+          type: string
+          example: "E-commerce Service"
+        environment:
+          type: string
+          enum: [production, staging, development]
+        status:
+          type: string
+          enum: [active, inactive, error]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        coverage_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+
+    ApplicationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            entity_id:
+              type: string
+              example: "entity-789"
+            alerts_count:
+              type: integer
+              minimum: 0
+            dashboards_count:
+              type: integer
+              minimum: 0
+            last_deployment:
+              type: string
+              format: date-time
+
+    CreateApplicationRequest:
+      type: object
+      required:
+        - name
+        - environment
+        - entity_id
+      properties:
+        name:
+          type: string
+          example: "E-commerce Service"
+        environment:
+          type: string
+          enum: [production, staging, development]
+        entity_id:
+          type: string
+          example: "entity-789"
+        description:
+          type: string
+          example: "Main e-commerce application"
+        team:
+          type: string
+          example: "Platform Team"
+
+    UpdateApplicationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        environment:
+          type: string
+          enum: [production, staging, development]
+        description:
+          type: string
+        team:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, error]
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "alert-123"
+        name:
+          type: string
+          example: "High CPU Usage"
+        type:
+          type: string
+          enum: [cpu_usage, memory_usage, disk_usage, response_time, error_rate, pod_health]
+        enabled:
+          type: boolean
+        nrql_query:
+          type: string
+        thresholds:
+          $ref: '#/components/schemas/Thresholds'
+        created_at:
+          type: string
+          format: date-time
+
+    Thresholds:
+      type: object
+      properties:
+        critical:
+          type: object
+          properties:
+            operator:
+              type: string
+              enum: [above, below, equal]
+            threshold:
+              type: number
+            duration:
+              type: integer
+              description: Duration in seconds
+        warning:
+          type: object
+          properties:
+            operator:
+              type: string
+              enum: [above, below, equal]
+            threshold:
+              type: number
+            duration:
+              type: integer
+              description: Duration in seconds
+
+    CreateAlertRequest:
+      type: object
+      required:
+        - name
+        - type
+        - nrql_query
+        - thresholds
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [cpu_usage, memory_usage, disk_usage, response_time, error_rate, pod_health]
+        nrql_query:
+          type: string
+        thresholds:
+          $ref: '#/components/schemas/Thresholds'
+        enabled:
+          type: boolean
+          default: true
+
+    Dashboard:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "dashboard-456"
+        name:
+          type: string
+          example: "Application Performance Dashboard"
+        type:
+          type: string
+          enum: [infrastructure, application_performance, error_analysis, business_metrics]
+        widgets_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateDashboardRequest:
+      type: object
+      required:
+        - name
+        - type
+        - widgets
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [infrastructure, application_performance, error_analysis, business_metrics]
+        description:
+          type: string
+        widgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Widget'
+
+    Widget:
+      type: object
+      required:
+        - title
+        - visualization
+        - nrql_query
+      properties:
+        title:
+          type: string
+        visualization:
+          type: string
+          enum: [line_chart, bar_chart, pie_chart, table, billboard]
+        nrql_query:
+          type: string
+        row:
+          type: integer
+          minimum: 1
+        column:
+          type: integer
+          minimum: 1
+        width:
+          type: integer
+          minimum: 1
+          maximum: 12
+        height:
+          type: integer
+          minimum: 1
+
+    CoverageReport:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            total_applications:
+              type: integer
+            average_coverage_score:
+              type: number
+              format: float
+            coverage_levels:
+              type: object
+              additionalProperties:
+                type: integer
+            applications_needing_attention:
+              type: integer
+        applications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              score:
+                type: number
+                format: float
+              level:
+                type: string
+                enum: [excellent, good, fair, poor, critical]
+              alert_coverage:
+                type: number
+                format: float
+              dashboard_coverage:
+                type: number
+                format: float
+              entity_coverage:
+                type: number
+                format: float
+              issues:
+                type: array
+                items:
+                  type: string
+        recommendations:
+          type: object
+          properties:
+            critical_applications:
+              type: array
+              items:
+                type: string
+            poor_applications:
+              type: array
+              items:
+                type: string
+            common_missing_alerts:
+              type: array
+              items:
+                type: string
+            common_missing_dashboards:
+              type: array
+              items:
+                type: string
+            priority_actions:
+              type: array
+              items:
+                type: string
+
+    ComplianceReport:
+      type: object
+      properties:
+        overall_compliance:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        applications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              compliant:
+                type: boolean
+              score:
+                type: number
+                format: float
+              violations:
+                type: array
+                items:
+                  type: string
+        standards:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              compliant:
+                type: boolean
+              score:
+                type: number
+                format: float
+              requirements:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    met:
+                      type: boolean
+                    description:
+                      type: string
+
+    DeployRequest:
+      type: object
+      required:
+        - application_ids
+      properties:
+        application_ids:
+          type: array
+          items:
+            type: string
+        dry_run:
+          type: boolean
+          default: false
+        force:
+          type: boolean
+          default: false
+        components:
+          type: array
+          items:
+            type: string
+            enum: [alerts, dashboards, policies]
+
+    DeployResponse:
+      type: object
+      properties:
+        deployment_id:
+          type: string
+          example: "deploy-789"
+        status:
+          type: string
+          enum: [initiated, in_progress, completed, failed]
+        applications:
+          type: array
+          items:
+            type: object
+            properties:
+              application_id:
+                type: string
+              status:
+                type: string
+                enum: [pending, deployed, failed]
+              components_deployed:
+                type: array
+                items:
+                  type: string
+        estimated_completion:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
