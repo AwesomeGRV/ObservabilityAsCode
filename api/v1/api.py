@@ -3,7 +3,7 @@ API v1 router configuration
 """
 
 from fastapi import APIRouter
-from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth
+from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth, synthetics
 
 api_router = APIRouter()
 
@@ -47,4 +47,9 @@ api_router.include_router(
     compliance.router,
     prefix="/compliance",
     tags=["Compliance"]
+)
+
+api_router.include_router(
+    synthetics.router,
+    tags=["Synthetic Monitoring"]
 )

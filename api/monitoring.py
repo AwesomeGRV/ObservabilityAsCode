@@ -52,11 +52,45 @@ API_ERRORS = Counter(
     ['error_type', 'endpoint']
 )
 
+# Synthetic monitoring metrics
+SYNTHETIC_CHECKS_TOTAL = Counter(
+    'synthetic_checks_total',
+    'Total synthetic monitoring checks',
+    ['check_type', 'location', 'status']
+)
+
+SYNTHETIC_CHECK_DURATION = Histogram(
+    'synthetic_check_duration_seconds',
+    'Synthetic check duration in seconds',
+    ['check_type', 'location']
+)
+
+SYNTHETIC_FAILURES_TOTAL = Counter(
+    'synthetic_failures_total',
+    'Total synthetic check failures',
+    ['check_type', 'location', 'error_type']
+)
+
+SYNTHETIC_RESPONSE_TIME = Gauge(
+    'synthetic_response_time_seconds',
+    'Latest synthetic check response time',
+    ['check_type', 'location']
+)
+
+SYNTHETIC_AVAILABILITY = Gauge(
+    'synthetic_availability_percent',
+    'Synthetic check availability percentage',
+    ['check_type', 'location']
+)
+
 # In-memory metrics storage
 metrics_store = {
     'requests_per_minute': {},
     'error_rates': {},
     'response_times': {},
+    'synthetic_checks': {},
+    'synthetic_failures': {},
+    'synthetic_response_times': {},
     'last_updated': datetime.utcnow()
 }
 
@@ -162,6 +196,138 @@ def update_error_metrics(endpoint: str, error_type: str):
         k: v for k, v in metrics_store['error_rates'].items()
         if datetime.strptime(k, '%Y-%m-%d %H:%M') > cutoff_time
     }
+
+
+def update_synthetic_metrics(check_type: str, location: str, status: str, 
+                           duration: float, error_type: str = None):
+    """Update synthetic monitoring metrics"""
+    now = datetime.utcnow()
+    minute_key = now.strftime('%Y-%m-%d %H:%M')
+    
+    # Update Prometheus metrics
+    SYNTHETIC_CHECKS_TOTAL.labels(
+        check_type=check_type, 
+        location=location, 
+        status=status
+    ).inc()
+    
+    SYNTHETIC_CHECK_DURATION.labels(
+        check_type=check_type, 
+        location=location
+    ).observe(duration)
+    
+    SYNTHETIC_RESPONSE_TIME.labels(
+        check_type=check_type, 
+        location=location
+    ).set(duration)
+    
+    # Update failure metrics if failed
+    if status == 'failed' and error_type:
+        SYNTHETIC_FAILURES_TOTAL.labels(
+            check_type=check_type, 
+            location=location, 
+            error_type=error_type
+        ).inc()
+    
+    # Update in-memory metrics
+    if minute_key not in metrics_store['synthetic_checks']:
+        metrics_store['synthetic_checks'][minute_key] = {}
+    
+    key = f"{check_type}:{location}"
+    if key not in metrics_store['synthetic_checks'][minute_key]:
+        metrics_store['synthetic_checks'][minute_key][key] = {
+            'total': 0,
+            'success': 0,
+            'failed': 0,
+            'total_duration': 0.0
+        }
+    
+    metrics_store['synthetic_checks'][minute_key][key]['total'] += 1
+    metrics_store['synthetic_checks'][minute_key][key]['total_duration'] += duration
+    
+    if status == 'success':
+        metrics_store['synthetic_checks'][minute_key][key]['success'] += 1
+    else:
+        metrics_store['synthetic_checks'][minute_key][key]['failed'] += 1
+    
+    # Calculate and update availability
+    total_checks = metrics_store['synthetic_checks'][minute_key][key]['total']
+    success_checks = metrics_store['synthetic_checks'][minute_key][key]['success']
+    availability = (success_checks / total_checks) * 100 if total_checks > 0 else 0
+    
+    SYNTHETIC_AVAILABILITY.labels(
+        check_type=check_type, 
+        location=location
+    ).set(availability)
+    
+    # Keep only last 60 minutes of data
+    cutoff_time = now - timedelta(minutes=60)
+    for store_key in ['synthetic_checks', 'synthetic_failures', 'synthetic_response_times']:
+        metrics_store[store_key] = {
+            k: v for k, v in metrics_store[store_key].items()
+            if datetime.strptime(k, '%Y-%m-%d %H:%M') > cutoff_time
+        }
+
+
+def get_synthetic_metrics_summary() -> Dict[str, Any]:
+    """Get summary of synthetic monitoring metrics"""
+    try:
+        now = datetime.utcnow()
+        last_5_minutes = now - timedelta(minutes=5)
+        last_hour = now - timedelta(hours=1)
+        
+        # Calculate synthetic check metrics for last 5 minutes
+        recent_checks = 0
+        recent_success = 0
+        recent_failed = 0
+        recent_duration = 0.0
+        
+        for minute_key, checks in metrics_store['synthetic_checks'].items():
+            minute_time = datetime.strptime(minute_key, '%Y-%m-%d %H:%M')
+            if minute_time > last_5_minutes:
+                for check_data in checks.values():
+                    recent_checks += check_data['total']
+                    recent_success += check_data['success']
+                    recent_failed += check_data['failed']
+                    recent_duration += check_data['total_duration']
+        
+        # Calculate hourly metrics
+        hourly_checks = 0
+        hourly_success = 0
+        hourly_failed = 0
+        
+        for minute_key, checks in metrics_store['synthetic_checks'].items():
+            minute_time = datetime.strptime(minute_key, '%Y-%m-%d %H:%M')
+            if minute_time > last_hour:
+                for check_data in checks.values():
+                    hourly_checks += check_data['total']
+                    hourly_success += check_data['success']
+                    hourly_failed += check_data['failed']
+        
+        # Calculate averages and percentages
+        avg_response_time = recent_duration / max(recent_checks, 1)
+        success_rate_5min = (recent_success / max(recent_checks, 1)) * 100
+        success_rate_hour = (hourly_success / max(hourly_checks, 1)) * 100
+        
+        return {
+            'synthetic_checks_last_5_minutes': recent_checks,
+            'synthetic_success_last_5_minutes': recent_success,
+            'synthetic_failures_last_5_minutes': recent_failed,
+            'synthetic_checks_last_hour': hourly_checks,
+            'synthetic_success_last_hour': hourly_success,
+            'synthetic_failures_last_hour': hourly_failed,
+            'success_rate_5min_percent': round(success_rate_5min, 2),
+            'success_rate_hour_percent': round(success_rate_hour, 2),
+            'average_response_time_seconds': round(avg_response_time, 3),
+            'last_updated': metrics_store['last_updated']
+        }
+        
+    except Exception as e:
+        logger.error("Failed to generate synthetic metrics summary", error=str(e))
+        return {
+            'error': str(e),
+            'last_updated': metrics_store['last_updated']
+        }
 
 
 def update_system_metrics():
@@ -332,10 +498,14 @@ def get_metrics_summary() -> Dict[str, Any]:
         
         error_rate = (recent_errors / max(recent_requests, 1)) * 100
         
+        # Get synthetic metrics summary
+        synthetic_summary = get_synthetic_metrics_summary()
+        
         return {
             'requests_last_5_minutes': recent_requests,
             'errors_last_5_minutes': recent_errors,
             'error_rate_percent': round(error_rate, 2),
+            'synthetic_monitoring': synthetic_summary,
             'system_metrics': {
                 'cpu_usage': psutil.cpu_percent(),
                 'memory_usage': psutil.virtual_memory().percent,

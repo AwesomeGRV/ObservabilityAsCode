@@ -264,3 +264,224 @@ class NERDGraphClient:
         
         result = self.execute_query(query, variables)
         return result.get("data", {}).get("actor", {}).get("account", {}).get("alerts", {}).get("incidentsSearch", {}).get("incidents", [])
+    
+    def get_synthetic_monitors(self, account_id: int) -> List[Dict]:
+        """Get all synthetic monitors for an account"""
+        query = """
+        query GetSyntheticMonitors($accountId: Int!) {
+          actor {
+            account(id: $accountId) {
+              synthetics {
+                monitors {
+                  guid
+                  name
+                  type
+                  status
+                  period
+                  locations {
+                    name
+                    label
+                  }
+                  uri
+                  created_at
+                  updated_at
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {"accountId": account_id}
+        result = self.execute_query(query, variables)
+        return result.get("data", {}).get("actor", {}).get("account", {}).get("synthetics", {}).get("monitors", [])
+    
+    def get_synthetic_results(self, monitor_guid: str, hours: int = 24) -> List[Dict]:
+        """Get synthetic monitor results"""
+        query = """
+        query GetSyntheticResults($monitorGuid: EntityGuid!, $timeWindow: DateTimeRangeInput!) {
+          actor {
+            entity(guid: $monitorGuid) {
+              ... on SyntheticMonitorEntity {
+                name
+                guid
+                type
+                period
+                locations {
+                  name
+                  label
+                }
+                results(timeWindow: $timeWindow) {
+                  timestamp
+                  duration
+                  error
+                  location {
+                    name
+                    label
+                  }
+                  resultType
+                  totalScore
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(hours=hours)
+        
+        variables = {
+            "monitorGuid": monitor_guid,
+            "timeWindow": {
+                "begin": start_time.isoformat() + "Z",
+                "end": end_time.isoformat() + "Z"
+            }
+        }
+        
+        result = self.execute_query(query, variables)
+        entity = result.get("data", {}).get("actor", {}).get("entity", {})
+        return entity.get("results", [])
+    
+    def create_synthetic_monitor(self, account_id: int, monitor_config: Dict) -> Dict:
+        """Create a synthetic monitor"""
+        mutation = """
+        mutation CreateSyntheticMonitor($accountId: Int!, $monitor: SyntheticMonitorCreateInput!) {
+          actor {
+            account(id: $accountId) {
+              synthetics {
+                monitorCreate(monitor: $monitor) {
+                  guid
+                  name
+                  type
+                  status
+                  period
+                  locations {
+                    name
+                    label
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {
+            "accountId": account_id,
+            "monitor": monitor_config
+        }
+        
+        result = self.execute_query(mutation, variables)
+        return result.get("data", {}).get("actor", {}).get("account", {}).get("synthetics", {}).get("monitorCreate", {})
+    
+    def update_synthetic_monitor(self, monitor_guid: str, monitor_config: Dict) -> Dict:
+        """Update a synthetic monitor"""
+        mutation = """
+        mutation UpdateSyntheticMonitor($monitorGuid: EntityGuid!, $monitor: SyntheticMonitorUpdateInput!) {
+          actor {
+            synthetics {
+              monitorUpdate(guid: $monitorGuid, monitor: $monitor) {
+                guid
+                name
+                type
+                status
+                period
+                locations {
+                  name
+                  label
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {
+            "monitorGuid": monitor_guid,
+            "monitor": monitor_config
+        }
+        
+        result = self.execute_query(mutation, variables)
+        return result.get("data", {}).get("actor", {}).get("synthetics", {}).get("monitorUpdate", {})
+    
+    def delete_synthetic_monitor(self, monitor_guid: str) -> Dict:
+        """Delete a synthetic monitor"""
+        mutation = """
+        mutation DeleteSyntheticMonitor($monitorGuid: EntityGuid!) {
+          actor {
+            synthetics {
+              monitorDelete(guid: $monitorGuid) {
+                guid
+                name
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {"monitorGuid": monitor_guid}
+        result = self.execute_query(mutation, variables)
+        return result.get("data", {}).get("actor", {}).get("synthetics", {}).get("monitorDelete", {})
+    
+    def get_synthetic_locations(self) -> List[Dict]:
+        """Get available synthetic monitoring locations"""
+        query = """
+        query GetSyntheticLocations {
+          actor {
+            synthetics {
+              locations {
+                name
+                label
+                private
+              }
+            }
+          }
+        }
+        """
+        
+        result = self.execute_query(query)
+        return result.get("data", {}).get("actor", {}).get("synthetics", {}).get("locations", [])
+    
+    def get_synthetic_alert_conditions(self, policy_id: int) -> List[Dict]:
+        """Get synthetic alert conditions for a policy"""
+        query = """
+        query GetSyntheticAlertConditions($policyId: Int!) {
+          actor {
+            account(id: 123456) {
+              alerts {
+                policy(id: $policyId) {
+                  name
+                  conditions {
+                    id
+                    name
+                    type
+                    enabled
+                    ... on SyntheticCondition {
+                      monitorName
+                      violationTimeLimitSeconds
+                    }
+                    critical {
+                      operator
+                      threshold
+                      thresholdDuration
+                      thresholdOccurrences
+                    }
+                    warning {
+                      operator
+                      threshold
+                      thresholdDuration
+                      thresholdOccurrences
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+        
+        variables = {"policyId": policy_id}
+        result = self.execute_query(query, variables)
+        policy_data = result.get("data", {}).get("actor", {}).get("account", {}).get("alerts", {}).get("policy", {})
+        return policy_data.get("conditions", [])

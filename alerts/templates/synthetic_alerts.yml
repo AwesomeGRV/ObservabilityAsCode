@@ -1,0 +1,267 @@
+---
+# Synthetic Monitoring Alert Templates
+# These templates define alert conditions for synthetic monitoring scenarios
+
+synthetic_monitoring:
+  # High-level synthetic availability alerts
+  - name: "Synthetic Monitor Down"
+    description: "Alert when synthetic monitor is down or failing"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "below"
+      value: 95
+      duration: 300  # 5 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck FACET monitorName"
+    notification_channels: ["email", "slack", "pagerduty"]
+    
+  - name: "Synthetic Monitor High Failure Rate"
+    description: "Alert when synthetic monitor failure rate exceeds threshold"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "above"
+      value: 10
+      duration: 900  # 15 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'FAILED') FROM SyntheticCheck FACET monitorName"
+    notification_channels: ["email", "slack"]
+
+  # Response time alerts
+  - name: "Synthetic Monitor Slow Response"
+    description: "Alert when synthetic monitor response time is slow"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "above"
+      value: 5.0
+      duration: 600  # 10 minutes
+    nrql: "SELECT average(duration) FROM SyntheticCheck WHERE result = 'SUCCESS' FACET monitorName"
+    notification_channels: ["email", "slack"]
+    
+  - name: "Synthetic Monitor Critical Response Time"
+    description: "Alert when synthetic monitor response time is critically slow"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "above"
+      value: 10.0
+      duration: 300  # 5 minutes
+    nrql: "SELECT average(duration) FROM SyntheticCheck WHERE result = 'SUCCESS' FACET monitorName"
+    notification_channels: ["email", "slack", "pagerduty"]
+
+  # Location-specific alerts
+  - name: "Synthetic Monitor Location Failure"
+    description: "Alert when synthetic monitor fails from specific location"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "below"
+      value: 90
+      duration: 600  # 10 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck FACET location, monitorName"
+    notification_channels: ["email", "slack"]
+    
+  - name: "Multiple Location Failures"
+    description: "Alert when synthetic monitor fails from multiple locations"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "above"
+      value: 2
+      duration: 300  # 5 minutes
+    nrql: "SELECT uniqueCount(location) FROM SyntheticCheck WHERE result = 'FAILED' FACET monitorName"
+    notification_channels: ["email", "slack", "pagerduty"]
+
+  # Check type specific alerts
+  - name: "API Endpoint Failure"
+    description: "Alert when API synthetic checks fail"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "below"
+      value: 95
+      duration: 300  # 5 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck WHERE checkType = 'API' FACET target"
+    notification_channels: ["email", "slack", "pagerduty"]
+    
+  - name: "Website Availability Issue"
+    description: "Alert when website synthetic checks fail"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "below"
+      value: 98
+      duration: 600  # 10 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck WHERE checkType = 'HTTP' FACET target"
+    notification_channels: ["email", "slack"]
+    
+  - name: "SSL Certificate Expiry Warning"
+    description: "Alert when SSL certificate is expiring soon"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "below"
+      value: 30
+      duration: 3600  # 1 hour
+    nrql: "SELECT average(daysUntilExpiry) FROM SyntheticCheck WHERE checkType = 'SSL' FACET target"
+    notification_channels: ["email", "slack"]
+    
+  - name: "SSL Certificate Critical Expiry"
+    description: "Alert when SSL certificate is about to expire"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "below"
+      value: 7
+      duration: 300  # 5 minutes
+    nrql: "SELECT average(daysUntilExpiry) FROM SyntheticCheck WHERE checkType = 'SSL' FACET target"
+    notification_channels: ["email", "slack", "pagerduty"]
+
+  # Error pattern alerts
+  - name: "Consistent Error Pattern"
+    description: "Alert when same error occurs repeatedly"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "above"
+      value: 5
+      duration: 900  # 15 minutes
+    nrql: "SELECT count(*) FROM SyntheticCheck WHERE result = 'FAILED' FACET monitorName, errorType"
+    notification_channels: ["email", "slack"]
+    
+  - name: "Network Timeout Pattern"
+    description: "Alert when network timeouts are detected"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "above"
+      value: 3
+      duration: 600  # 10 minutes
+    nrql: "SELECT count(*) FROM SyntheticCheck WHERE errorType = 'TIMEOUT' FACET monitorName"
+    notification_channels: ["email", "slack"]
+
+  # Business hours alerts
+  - name: "Business Hours Synthetic Failure"
+    description: "Alert when synthetic checks fail during business hours"
+    type: "static"
+    enabled: true
+    severity: "critical"
+    threshold:
+      operator: "below"
+      value: 99
+      duration: 300  # 5 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck WHERE hourOf(timestamp) >= 9 AND hourOf(timestamp) <= 17 FACET monitorName"
+    notification_channels: ["email", "slack", "pagerduty"]
+    
+  - name: "After Hours Synthetic Degradation"
+    description: "Alert when synthetic checks degrade during off-hours"
+    type: "static"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "below"
+      value: 95
+      duration: 900  # 15 minutes
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck WHERE hourOf(timestamp) < 9 OR hourOf(timestamp) > 17 FACET monitorName"
+    notification_channels: ["email", "slack"]
+
+  # Performance degradation alerts
+  - name: "Response Time Degradation"
+    description: "Alert when response time degrades compared to baseline"
+    type: "baseline"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "above"
+      value: 50  # 50% above baseline
+      duration: 600  # 10 minutes
+    baseline_duration: 7  # 7 days baseline
+    nrql: "SELECT average(duration) FROM SyntheticCheck WHERE result = 'SUCCESS' FACET monitorName"
+    notification_channels: ["email", "slack"]
+    
+  - name: "Availability Degradation"
+    description: "Alert when availability degrades compared to baseline"
+    type: "baseline"
+    enabled: true
+    severity: "warning"
+    threshold:
+      operator: "below"
+      value: 5  # 5% below baseline
+      duration: 900  # 15 minutes
+    baseline_duration: 7  # 7 days baseline
+    nrql: "SELECT percentage(count(*), WHERE result = 'SUCCESS') FROM SyntheticCheck FACET monitorName"
+    notification_channels: ["email", "slack"]
+
+# Alert notification templates
+notification_templates:
+  synthetic_failure:
+    subject: "🚨 Synthetic Monitor Alert: {{.AlertName}}"
+    body: |
+      Synthetic Monitor Alert Triggered
+      
+      Alert: {{.AlertName}}
+      Severity: {{.Severity}}
+      Monitor: {{.Facet.monitorName}}
+      Location: {{.Facet.location}}
+      Check Type: {{.Facet.checkType}}
+      
+      Current Value: {{.CurrentValue}}
+      Threshold: {{.Threshold}}
+      
+      Time: {{.Timestamp}}
+      Duration: {{.Duration}}
+      
+      View Details: {{.DashboardURL}}
+      
+      This is an automated alert from the Observability as Code system.
+    
+  synthetic_recovery:
+    subject: "✅ Synthetic Monitor Recovery: {{.AlertName}}"
+    body: |
+      Synthetic Monitor Alert Recovered
+      
+      Alert: {{.AlertName}}
+      Monitor: {{.Facet.monitorName}}
+      Location: {{.Facet.location}}
+      
+      Recovery Time: {{.Timestamp}}
+      Alert Duration: {{.AlertDuration}}
+      
+      The synthetic monitor has returned to normal operation.
+      
+      View Details: {{.DashboardURL}}
+      
+      This is an automated recovery notification from the Observability as Code system.
+
+# Alert escalation policies
+escalation_policies:
+  synthetic_critical:
+    - level: 1
+      delay: 0  # Immediate
+      channels: ["email", "slack"]
+    - level: 2
+      delay: 300  # 5 minutes
+      channels: ["pagerduty"]
+    - level: 3
+      delay: 900  # 15 minutes
+      channels: ["phone", "pagerduty"]
+      
+  synthetic_warning:
+    - level: 1
+      delay: 0  # Immediate
+      channels: ["email"]
+    - level: 2
+      delay: 600  # 10 minutes
+      channels: ["slack"]

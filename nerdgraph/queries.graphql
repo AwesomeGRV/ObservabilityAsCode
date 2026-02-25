@@ -213,3 +213,156 @@ query GetCoverageMetrics($accountId: Int!) {
     }
   }
 }
+
+# Get synthetic monitors
+query GetSyntheticMonitors($accountId: Int!) {
+  actor {
+    account(id: $accountId) {
+      synthetics {
+        monitors {
+          guid
+          name
+          type
+          status
+          period
+          locations {
+            name
+            label
+          }
+          uri
+          created_at
+          updated_at
+        }
+      }
+    }
+  }
+}
+
+# Get synthetic monitor results
+query GetSyntheticResults($monitorGuid: EntityGuid!, $timeWindow: DateTimeRangeInput!) {
+  actor {
+    entity(guid: $monitorGuid) {
+      ... on SyntheticMonitorEntity {
+        name
+        guid
+        type
+        period
+        locations {
+          name
+          label
+        }
+        results(timeWindow: $timeWindow) {
+          timestamp
+          duration
+          error
+          location {
+            name
+            label
+          }
+          resultType
+          totalScore
+        }
+      }
+    }
+  }
+}
+
+# Get synthetic locations
+query GetSyntheticLocations {
+  actor {
+    synthetics {
+      locations {
+        name
+        label
+        private
+      }
+    }
+  }
+}
+
+# Create synthetic monitor mutation
+mutation CreateSyntheticMonitor($accountId: Int!, $monitor: SyntheticMonitorCreateInput!) {
+  actor {
+    account(id: $accountId) {
+      synthetics {
+        monitorCreate(monitor: $monitor) {
+          guid
+          name
+          type
+          status
+          period
+          locations {
+            name
+            label
+          }
+        }
+      }
+    }
+  }
+}
+
+# Update synthetic monitor mutation
+mutation UpdateSyntheticMonitor($monitorGuid: EntityGuid!, $monitor: SyntheticMonitorUpdateInput!) {
+  actor {
+    synthetics {
+      monitorUpdate(guid: $monitorGuid, monitor: $monitor) {
+        guid
+        name
+        type
+        status
+        period
+        locations {
+          name
+          label
+        }
+      }
+    }
+  }
+}
+
+# Delete synthetic monitor mutation
+mutation DeleteSyntheticMonitor($monitorGuid: EntityGuid!) {
+  actor {
+    synthetics {
+      monitorDelete(guid: $monitorGuid) {
+        guid
+        name
+      }
+    }
+  }
+}
+
+# Get synthetic alert conditions
+query GetSyntheticAlertConditions($policyId: Int!) {
+  actor {
+    account(id: 123456) {
+      alerts {
+        policy(id: $policyId) {
+          name
+          conditions {
+            id
+            name
+            type
+            enabled
+            ... on SyntheticCondition {
+              monitorName
+              violationTimeLimitSeconds
+            }
+            critical {
+              operator
+              threshold
+              thresholdDuration
+              thresholdOccurrences
+            }
+            warning {
+              operator
+              threshold
+              thresholdDuration
+              thresholdOccurrences
+            }
+          }
+        }
+      }
+    }
+  }
+}

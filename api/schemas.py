@@ -301,3 +301,62 @@ class ErrorResponse(BaseModel):
     message: str
     details: Optional[List[ErrorDetail]] = None
     timestamp: datetime
+
+
+# Synthetic monitoring schemas
+class SyntheticCheckType(str, Enum):
+    PING = "ping"
+    HTTP = "http"
+    API = "api"
+    SSL = "ssl"
+
+
+class SyntheticCheckCreate(BaseModel):
+    check_type: SyntheticCheckType
+    target: str
+    location: str = "us-east-1"
+    timeout: int = 30
+    interval: Optional[int] = None
+
+
+class SyntheticCheckResponse(BaseModel):
+    check_type: str
+    target: str
+    location: str
+    success: bool
+    response_time_seconds: float
+    status_code: Optional[int] = None
+    error_message: Optional[str] = None
+    timestamp: datetime
+
+
+class SyntheticMetricsResponse(BaseModel):
+    synthetic_checks_last_5_minutes: int
+    synthetic_success_last_5_minutes: int
+    synthetic_failures_last_5_minutes: int
+    synthetic_checks_last_hour: int
+    synthetic_success_last_hour: int
+    synthetic_failures_last_hour: int
+    success_rate_5min_percent: float
+    success_rate_hour_percent: float
+    average_response_time_seconds: float
+    last_updated: datetime
+
+
+class SyntheticCheckConfig(BaseModel):
+    check_type: SyntheticCheckType
+    target: str
+    interval: int
+    locations: List[str]
+    method: Optional[str] = "GET"
+    headers: Optional[Dict[str, str]] = None
+    expected_status_code: Optional[int] = 200
+
+
+class SyntheticStatusResponse(BaseModel):
+    status: str
+    total_checks_configured: int
+    monitoring_locations: List[str]
+    check_types: List[str]
+    metrics: Dict[str, Any]
+    last_updated: datetime
