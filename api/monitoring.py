@@ -52,6 +52,161 @@ API_ERRORS = Counter(
     ['error_type', 'endpoint']
 )
 
+# Frontend/Client-side metrics
+FRONTEND_PAGE_VIEWS = Counter(
+    'frontend_page_views_total',
+    'Total page views',
+    ['page', 'user_agent', 'referrer']
+)
+
+FRONTEND_PAGE_LOAD_TIME = Histogram(
+    'frontend_page_load_duration_seconds',
+    'Page load duration in seconds',
+    ['page', 'browser', 'device_type']
+)
+
+FRONTEND_CORE_WEB_VITALS = Histogram(
+    'frontend_core_web_vitals_seconds',
+    'Core Web Vitals metrics',
+    ['metric_type', 'page', 'device_type']
+)
+
+FRONTEND_USER_INTERACTIONS = Counter(
+    'frontend_user_interactions_total',
+    'Total user interactions',
+    ['interaction_type', 'element', 'page']
+)
+
+FRONTEND_JAVASCRIPT_ERRORS = Counter(
+    'frontend_javascript_errors_total',
+    'JavaScript errors',
+    ['error_type', 'page', 'browser']
+)
+
+# Backend Service metrics
+BACKEND_API_REQUESTS = Counter(
+    'backend_api_requests_total',
+    'Total backend API requests',
+    ['service', 'endpoint', 'method', 'status']
+)
+
+BACKEND_API_DURATION = Histogram(
+    'backend_api_duration_seconds',
+    'Backend API duration in seconds',
+    ['service', 'endpoint', 'method']
+)
+
+BACKEND_DATABASE_QUERIES = Counter(
+    'backend_database_queries_total',
+    'Total database queries',
+    ['service', 'operation', 'table']
+)
+
+BACKEND_DATABASE_DURATION = Histogram(
+    'backend_database_duration_seconds',
+    'Database query duration in seconds',
+    ['service', 'operation', 'table']
+)
+
+BACKEND_CACHE_OPERATIONS = Counter(
+    'backend_cache_operations_total',
+    'Cache operations',
+    ['service', 'operation', 'result']
+)
+
+BACKEND_SERVICE_DEPENDENCIES = Counter(
+    'backend_service_dependencies_total',
+    'Service dependency calls',
+    ['service', 'dependency', 'operation', 'status']
+)
+
+# Infrastructure/Container metrics
+CONTAINER_CPU_USAGE = Gauge(
+    'container_cpu_usage_percent',
+    'Container CPU usage percentage',
+    ['container_name', 'pod_name', 'namespace']
+)
+
+CONTAINER_MEMORY_USAGE = Gauge(
+    'container_memory_usage_bytes',
+    'Container memory usage in bytes',
+    ['container_name', 'pod_name', 'namespace']
+)
+
+CONTAINER_NETWORK_IO = Counter(
+    'container_network_io_bytes_total',
+    'Container network I/O in bytes',
+    ['container_name', 'pod_name', 'namespace', 'direction']
+)
+
+POD_RESTART_COUNT = Counter(
+    'pod_restart_count_total',
+    'Pod restart count',
+    ['pod_name', 'namespace', 'container_name']
+)
+
+NODE_RESOURCE_USAGE = Gauge(
+    'node_resource_usage_percent',
+    'Node resource usage percentage',
+    ['node_name', 'resource_type']
+)
+
+# Microservices metrics
+SERVICE_MESH_REQUESTS = Counter(
+    'service_mesh_requests_total',
+    'Service mesh requests',
+    ['source_service', 'destination_service', 'method', 'status']
+)
+
+SERVICE_MESH_DURATION = Histogram(
+    'service_mesh_duration_seconds',
+    'Service mesh request duration',
+    ['source_service', 'destination_service', 'method']
+)
+
+DISTRIBUTED_TRACES = Counter(
+    'distributed_traces_total',
+    'Distributed traces',
+    ['trace_id', 'service', 'operation', 'status']
+)
+
+SERVICE_DEPENDENCY_LATENCY = Histogram(
+    'service_dependency_latency_seconds',
+    'Service dependency latency',
+    ['service', 'dependency', 'operation']
+)
+
+CIRCUIT_BREAKER_STATE = Gauge(
+    'circuit_breaker_state',
+    'Circuit breaker state (0=closed, 1=open, 2=half-open)',
+    ['service', 'dependency']
+)
+
+# End-to-End Transaction metrics
+TRANSACTION_DURATION = Histogram(
+    'transaction_duration_seconds',
+    'End-to-end transaction duration',
+    ['transaction_type', 'user_id', 'service_flow']
+)
+
+TRANSACTION_SUCCESS_RATE = Gauge(
+    'transaction_success_rate_percent',
+    'Transaction success rate percentage',
+    ['transaction_type', 'service_flow']
+)
+
+USER_JOURNEY_STEPS = Counter(
+    'user_journey_steps_total',
+    'User journey step completions',
+    ['journey_type', 'step_name', 'user_segment']
+)
+
+BUSINESS_METRICS = Counter(
+    'business_metrics_total',
+    'Business metrics',
+    ['metric_name', 'product', 'user_segment']
+)
+
 # Synthetic monitoring metrics
 SYNTHETIC_CHECKS_TOTAL = Counter(
     'synthetic_checks_total',
@@ -91,6 +246,11 @@ metrics_store = {
     'synthetic_checks': {},
     'synthetic_failures': {},
     'synthetic_response_times': {},
+    'frontend_metrics': {},
+    'backend_metrics': {},
+    'container_metrics': {},
+    'microservices_metrics': {},
+    'transaction_metrics': {},
     'last_updated': datetime.utcnow()
 }
 
@@ -349,12 +509,200 @@ def update_system_metrics():
             cpu_usage=cpu_percent,
             memory_usage=memory.percent
         )
-        
     except Exception as e:
         logger.error("Failed to update system metrics", error=str(e))
 
 
-def get_health_status() -> Dict[str, Any]:
+def update_frontend_metrics(page: str, load_time: float, user_agent: str, referrer: str, browser: str, device_type: str):
+    """Update frontend metrics"""
+    try:
+        # Update Prometheus metrics
+        FRONTEND_PAGE_VIEWS.labels(page=page, user_agent=user_agent, referrer=referrer).inc()
+        FRONTEND_PAGE_LOAD_TIME.labels(page=page, browser=browser, device_type=device_type).observe(load_time)
+        
+        # Update in-memory metrics
+        if page not in metrics_store['frontend_metrics']:
+            metrics_store['frontend_metrics'][page] = {
+                'page_views': 0,
+                'load_times': [],
+                'browsers': {},
+                'device_types': {}
+            }
+        
+        metrics_store['frontend_metrics'][page]['page_views'] += 1
+        metrics_store['frontend_metrics'][page]['load_times'].append(load_time)
+        
+        if browser not in metrics_store['frontend_metrics'][page]['browsers']:
+            metrics_store['frontend_metrics'][page]['browsers'][browser] = 0
+        metrics_store['frontend_metrics'][page]['browsers'][browser] += 1
+        
+        if device_type not in metrics_store['frontend_metrics'][page]['device_types']:
+            metrics_store['frontend_metrics'][page]['device_types'][device_type] = 0
+        metrics_store['frontend_metrics'][page]['device_types'][device_type] += 1
+        
+        metrics_store['last_updated'] = datetime.utcnow()
+        
+    except Exception as e:
+        logger.error("Failed to update frontend metrics", error=str(e))
+
+
+def update_backend_metrics(service: str, endpoint: str, method: str, status: str, duration: float):
+    """Update backend service metrics"""
+    try:
+        # Update Prometheus metrics
+        BACKEND_API_REQUESTS.labels(service=service, endpoint=endpoint, method=method, status=status).inc()
+        BACKEND_API_DURATION.labels(service=service, endpoint=endpoint, method=method).observe(duration)
+        
+        # Update in-memory metrics
+        if service not in metrics_store['backend_metrics']:
+            metrics_store['backend_metrics'][service] = {
+                'requests': 0,
+                'response_times': [],
+                'endpoints': {},
+                'error_count': 0
+            }
+        
+        metrics_store['backend_metrics'][service]['requests'] += 1
+        metrics_store['backend_metrics'][service]['response_times'].append(duration)
+        
+        if endpoint not in metrics_store['backend_metrics'][service]['endpoints']:
+            metrics_store['backend_metrics'][service]['endpoints'][endpoint] = {
+                'count': 0,
+                'total_duration': 0
+            }
+        
+        metrics_store['backend_metrics'][service]['endpoints'][endpoint]['count'] += 1
+        metrics_store['backend_metrics'][service]['endpoints'][endpoint]['total_duration'] += duration
+        
+        if status.startswith('4') or status.startswith('5'):
+            metrics_store['backend_metrics'][service]['error_count'] += 1
+        
+        metrics_store['last_updated'] = datetime.utcnow()
+        
+    except Exception as e:
+        logger.error("Failed to update backend metrics", error=str(e))
+
+
+def update_container_metrics(container_name: str, pod_name: str, namespace: str, cpu_usage: float, memory_usage: float, network_io: dict):
+    """Update container metrics"""
+    try:
+        # Update Prometheus metrics
+        CONTAINER_CPU_USAGE.labels(container_name=container_name, pod_name=pod_name, namespace=namespace).set(cpu_usage)
+        CONTAINER_MEMORY_USAGE.labels(container_name=container_name, pod_name=pod_name, namespace=namespace).set(memory_usage)
+        
+        # Update network I/O
+        for direction, bytes_count in network_io.items():
+            CONTAINER_NETWORK_IO.labels(
+                container_name=container_name, 
+                pod_name=pod_name, 
+                namespace=namespace, 
+                direction=direction
+            ).inc(bytes_count)
+        
+        # Update in-memory metrics
+        key = f"{namespace}/{pod_name}/{container_name}"
+        if key not in metrics_store['container_metrics']:
+            metrics_store['container_metrics'][key] = {
+                'cpu_usage': [],
+                'memory_usage': [],
+                'network_io': {'in': 0, 'out': 0},
+                'last_updated': datetime.utcnow()
+            }
+        
+        metrics_store['container_metrics'][key]['cpu_usage'].append(cpu_usage)
+        metrics_store['container_metrics'][key]['memory_usage'].append(memory_usage)
+        metrics_store['container_metrics'][key]['network_io']['in'] += network_io.get('in', 0)
+        metrics_store['container_metrics'][key]['network_io']['out'] += network_io.get('out', 0)
+        metrics_store['container_metrics'][key]['last_updated'] = datetime.utcnow()
+        
+        metrics_store['last_updated'] = datetime.utcnow()
+        
+    except Exception as e:
+        logger.error("Failed to update container metrics", error=str(e))
+
+
+def update_microservices_metrics(source_service: str, destination_service: str, method: str, status: str, duration: float):
+    """Update microservices metrics"""
+    try:
+        # Update Prometheus metrics
+        SERVICE_MESH_REQUESTS.labels(
+            source_service=source_service, 
+            destination_service=destination_service, 
+            method=method, 
+            status=status
+        ).inc()
+        
+        SERVICE_MESH_DURATION.labels(
+            source_service=source_service, 
+            destination_service=destination_service, 
+            method=method
+        ).observe(duration)
+        
+        # Update in-memory metrics
+        key = f"{source_service}->{destination_service}"
+        if key not in metrics_store['microservices_metrics']:
+            metrics_store['microservices_metrics'][key] = {
+                'requests': 0,
+                'response_times': [],
+                'error_count': 0,
+                'methods': {}
+            }
+        
+        metrics_store['microservices_metrics'][key]['requests'] += 1
+        metrics_store['microservices_metrics'][key]['response_times'].append(duration)
+        
+        if method not in metrics_store['microservices_metrics'][key]['methods']:
+            metrics_store['microservices_metrics'][key]['methods'][method] = 0
+        metrics_store['microservices_metrics'][key]['methods'][method] += 1
+        
+        if status.startswith('4') or status.startswith('5'):
+            metrics_store['microservices_metrics'][key]['error_count'] += 1
+        
+        metrics_store['last_updated'] = datetime.utcnow()
+        
+    except Exception as e:
+        logger.error("Failed to update microservices metrics", error=str(e))
+
+
+def update_transaction_metrics(transaction_type: str, user_id: str, service_flow: str, duration: float, status: str):
+    """Update end-to-end transaction metrics"""
+    try:
+        # Update Prometheus metrics
+        TRANSACTION_DURATION.labels(
+            transaction_type=transaction_type, 
+            user_id=user_id, 
+            service_flow=service_flow
+        ).observe(duration)
+        
+        # Update in-memory metrics
+        if transaction_type not in metrics_store['transaction_metrics']:
+            metrics_store['transaction_metrics'][transaction_type] = {
+                'transactions': 0,
+                'durations': [],
+                'success_count': 0,
+                'failure_count': 0,
+                'service_flows': {}
+            }
+        
+        metrics_store['transaction_metrics'][transaction_type]['transactions'] += 1
+        metrics_store['transaction_metrics'][transaction_type]['durations'].append(duration)
+        
+        if service_flow not in metrics_store['transaction_metrics'][transaction_type]['service_flows']:
+            metrics_store['transaction_metrics'][transaction_type]['service_flows'][service_flow] = 0
+        metrics_store['transaction_metrics'][transaction_type]['service_flows'][service_flow] += 1
+        
+        if status == 'success':
+            metrics_store['transaction_metrics'][transaction_type]['success_count'] += 1
+        else:
+            metrics_store['transaction_metrics'][transaction_type]['failure_count'] += 1
+        
+        metrics_store['last_updated'] = datetime.utcnow()
+        
+    except Exception as e:
+        logger.error("Failed to update transaction metrics", error=str(e))
+
+
+def get_system_metrics() -> Dict[str, Any]:
     """Get comprehensive health status"""
     try:
         health_checks = {

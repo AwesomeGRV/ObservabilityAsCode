@@ -3,7 +3,7 @@ API v1 router configuration
 """
 
 from fastapi import APIRouter
-from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth, synthetics
+from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth, synthetics, frontend, backend, infrastructure, microservices, transactions
 
 api_router = APIRouter()
 
@@ -52,4 +52,29 @@ api_router.include_router(
 api_router.include_router(
     synthetics.router,
     tags=["Synthetic Monitoring"]
+)
+
+api_router.include_router(
+    frontend.router,
+    tags=["Frontend Monitoring"]
+)
+
+api_router.include_router(
+    backend.router,
+    tags=["Backend Monitoring"]
+)
+
+api_router.include_router(
+    infrastructure.router,
+    tags=["Infrastructure Monitoring"]
+)
+
+api_router.include_router(
+    microservices.router,
+    tags=["Microservices Monitoring"]
+)
+
+api_router.include_router(
+    transactions.router,
+    tags=["Transaction Monitoring"]
 )
