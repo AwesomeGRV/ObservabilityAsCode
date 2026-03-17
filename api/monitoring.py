@@ -207,6 +207,162 @@ BUSINESS_METRICS = Counter(
     ['metric_name', 'product', 'user_segment']
 )
 
+# Custom Application Metrics
+CUSTOM_BUSINESS_EVENTS = Counter(
+    'custom_business_events_total',
+    'Custom business events',
+    ['event_type', 'product', 'user_segment', 'region']
+)
+
+CUSTOM_USER_BEHAVIOR = Histogram(
+    'custom_user_behavior_seconds',
+    'Custom user behavior metrics',
+    ['behavior_type', 'feature', 'user_type']
+)
+
+CUSTOM_FEATURE_USAGE = Counter(
+    'custom_feature_usage_total',
+    'Custom feature usage tracking',
+    ['feature_name', 'feature_category', 'user_tier']
+)
+
+CUSTOM_PERFORMANCE_SCORES = Gauge(
+    'custom_performance_scores',
+    'Custom performance scores',
+    ['score_type', 'component', 'environment']
+)
+
+CUSTOM_BUSINESS_KPI = Gauge(
+    'custom_business_kpi_value',
+    'Custom business KPI values',
+    ['kpi_name', 'business_unit', 'time_period']
+)
+
+# Security Monitoring Metrics
+SECURITY_EVENTS = Counter(
+    'security_events_total',
+    'Security events and incidents',
+    ['event_type', 'severity', 'source', 'category']
+)
+
+SECURITY_THREATS = Counter(
+    'security_threats_detected_total',
+    'Security threats detected',
+    ['threat_type', 'confidence', 'target']
+)
+
+SECURITY_VIOLATIONS = Counter(
+    'security_violations_total',
+    'Security policy violations',
+    ['policy_type', 'violation_severity', 'affected_resource']
+)
+
+AUTHENTICATION_ATTEMPTS = Counter(
+    'authentication_attempts_total',
+    'Authentication attempts',
+    ['auth_method', 'result', 'user_type', 'ip_location']
+)
+
+AUTHORIZATION_FAILURES = Counter(
+    'authorization_failures_total',
+    'Authorization failures',
+    ['resource', 'action', 'user_role', 'failure_reason']
+)
+
+SECURITY_SCORE = Gauge(
+    'security_posture_score',
+    'Overall security posture score',
+    ['score_category', 'environment']
+)
+
+# Cost Monitoring Metrics
+COST_BY_SERVICE = Gauge(
+    'cost_by_service_dollars',
+    'Cost breakdown by service',
+    ['service_name', 'cost_type', 'environment']
+)
+
+COST_BY_RESOURCE = Gauge(
+    'cost_by_resource_dollars',
+    'Cost breakdown by resource type',
+    ['resource_type', 'provider', 'region']
+)
+
+COST_OPTIMIZATION_SAVINGS = Gauge(
+    'cost_optimization_savings_dollars',
+    'Cost optimization savings',
+    ['optimization_type', 'time_period']
+)
+
+RESOURCE_UTILIZATION_COST = Gauge(
+    'resource_utilization_cost_percent',
+    'Resource utilization vs cost efficiency',
+    ['resource_type', 'service', 'efficiency_metric']
+)
+
+# Compliance and Audit Metrics
+COMPLIANCE_VIOLATIONS = Counter(
+    'compliance_violations_total',
+    'Compliance violations detected',
+    ['standard', 'violation_type', 'severity', 'department']
+)
+
+AUDIT_EVENTS = Counter(
+    'audit_events_total',
+    'Audit trail events',
+    ['event_type', 'user_role', 'resource_type', 'action_result']
+)
+
+DATA_ACCESS_EVENTS = Counter(
+    'data_access_events_total',
+    'Data access and modification events',
+    ['data_type', 'access_type', 'user_role', 'sensitivity']
+)
+
+POLICY_COMPLIANCE_SCORE = Gauge(
+    'policy_compliance_score_percent',
+    'Policy compliance scores',
+    ['policy_name', 'department', 'compliance_area']
+)
+
+# Custom Application Health Metrics
+APPLICATION_HEALTH_SCORE = Gauge(
+    'application_health_score_percent',
+    'Overall application health score',
+    ['app_name', 'environment', 'health_category']
+)
+
+CUSTOM_SLA_COMPLIANCE = Gauge(
+    'custom_sla_compliance_percent',
+    'Custom SLA compliance metrics',
+    ['sla_name', 'service', 'time_period']
+)
+
+CUSTOM_ERROR_BUDGET = Gauge(
+    'custom_error_budget_remaining_percent',
+    'Custom error budget remaining',
+    ['service', 'sla_type', 'time_window']
+)
+
+# Advanced Analytics Metrics
+ANOMALY_DETECTION_EVENTS = Counter(
+    'anomaly_detection_events_total',
+    'Anomaly detection events',
+    ['anomaly_type', 'severity', 'metric_name', 'detection_method']
+)
+
+ML_PREDICTION_ACCURACY = Gauge(
+    'ml_prediction_accuracy_percent',
+    'Machine learning prediction accuracy',
+    ['model_name', 'prediction_type', 'time_period']
+)
+
+PATTERN_DETECTION_EVENTS = Counter(
+    'pattern_detection_events_total',
+    'Pattern detection events',
+    ['pattern_type', 'confidence', 'data_source']
+)
+
 # Synthetic monitoring metrics
 SYNTHETIC_CHECKS_TOTAL = Counter(
     'synthetic_checks_total',
@@ -251,6 +407,12 @@ metrics_store = {
     'container_metrics': {},
     'microservices_metrics': {},
     'transaction_metrics': {},
+    'custom_business_metrics': {},
+    'security_metrics': {},
+    'cost_metrics': {},
+    'compliance_metrics': {},
+    'application_health_metrics': {},
+    'analytics_metrics': {},
     'last_updated': datetime.utcnow()
 }
 
