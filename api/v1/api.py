@@ -3,7 +3,7 @@ API v1 router configuration
 """
 
 from fastapi import APIRouter
-from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth, synthetics, frontend, backend, infrastructure, microservices, transactions
+from .endpoints import applications, alerts, dashboards, deployments, coverage, compliance, auth, synthetics, frontend, backend, infrastructure, microservices, transactions, custom
 
 api_router = APIRouter()
 
@@ -77,4 +77,9 @@ api_router.include_router(
 api_router.include_router(
     transactions.router,
     tags=["Transaction Monitoring"]
+)
+
+api_router.include_router(
+    custom.router,
+    tags=["Custom Monitoring"]
 )
